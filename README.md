@@ -183,7 +183,133 @@ xyz
 
 ## Core Protocols
 
-xyz
+This section covers the essential protocols that act as the "brains" of the network, managing how devices find each other, get configured, and communicate efficiently. While the Network and Transport layers handle the raw data delivery, these protocols provide the critical services that make networking user-friendly and automated.
+
+-----
+
+### DNS (Domain Name System)
+
+DNS is the **internet's phonebook**. It translates human-readable domain names (like `www.google.com`) into machine-readable IP addresses (like `142.250.196.196`). Without DNS, we would have to remember long strings of numbers to access any website.
+
+#### How DNS Resolution Works (Recursive Query)
+
+When you type a domain name into your browser, a multi-step process happens in the background to find the corresponding IP address.
+
+1.  **Client Query**: Your computer first checks its own local cache. If the address isn't there, it asks its configured **DNS Resolver** (usually provided by your ISP or a public service like Google's `8.8.8.8`).
+2.  **Resolver Asks Root**: The resolver, if it doesn't have the IP cached, asks one of the **Root Servers**. The root server doesn't know the IP but knows who manages the top-level domain (TLD), like `.com`. It replies, "I don't know, but ask the `.com` TLD server."
+3.  **Resolver Asks TLD**: The resolver then asks the **TLD Name Server** for `.com`. The TLD server doesn't know the full IP but knows which server is authoritative for the `google.com` domain. It replies, "I don't know, but ask Google's authoritative name server."
+4.  **Resolver Asks Authoritative Server**: Finally, the resolver asks Google's **Authoritative Name Server**. This server is the ultimate source of truth for the `google.com` domain and replies with the correct IP address.
+5.  **Response & Caching**: The resolver sends this IP back to your computer and **caches** it for a set amount of time (called a TTL, or Time-To-Live) to speed up future requests.
+
+#### Diagram: DNS Recursive Query Flow
+
+```plaintext
+              [ You ]
+                 | 1. "What is www.google.com?"
+                 v
++-----------------------------+     2. Asks Root Server --> 3. "Try .com TLD"
+| Your Local/ISP DNS Resolver |<----------------------------------------------+
++-----------------------------+                                               |
+                 | 4. Asks .com TLD Server --> 5. "Try google.com's server"    |
+                 v                                                             |
++--------------------------------+     6. Asks Authoritative --> 7. "IP is X"  |
+| Google's Authoritative Server  |---------------------------------------------+
++--------------------------------+
+                 | 8. Resolver gives you IP "X"
+                 v
+              [ You now connect to IP "X" ]
+```
+
+-----
+
+### DHCP (Dynamic Host Configuration Protocol)
+
+DHCP is the protocol that **automatically assigns IP addresses** and other network settings to devices when they join a network. It's the reason you can connect to a Wi-Fi network and get online instantly without manually configuring your IP address, subnet mask, and default gateway.
+
+#### How DHCP Works (The DORA Process)
+
+DHCP uses a four-step process known as **DORA**:
+
+1.  **Discover**: When a new device joins a LAN, it knows nothing about the network. It shouts out a **DHCP Discover** message to the broadcast address (`255.255.255.255`), asking, "Is there a DHCP server here that can give me an IP address?"
+2.  **Offer**: Any DHCP server on the network that hears the broadcast can respond with a **DHCP Offer** message, sent directly to the device. This offer includes a proposed IP address, subnet mask, gateway IP, and a "lease" time (how long the device can use that IP).
+3.  **Request**: The device receives one or more offers and chooses one. It then sends a **DHCP Request** message back (again, as a broadcast) to formally request the offered IP from the chosen server. This broadcast informs all other DHCP servers that it has made a choice.
+4.  **Acknowledge**: The server that made the offer finalizes the process by sending a **DHCP Acknowledge (ACK)** message. This confirms the lease, and the device can now use the IP address.
+
+#### Diagram: The DORA Process
+
+```plaintext
++--------+                                          +-------------+
+| Client |                                          | DHCP Server |
++--------+                                          +-------------+
+    |                                                      |
+    |  --- 1. Discover (Broadcast: "I need an IP!") --->   |
+    |                                                      |
+    |  <-- 2. Offer    (Unicast: "Here's 192.168.1.100") -- |
+    |                                                      |
+    |  --- 3. Request  (Broadcast: "I'll take that IP!") ->|
+    |                                                      |
+    |  <-- 4. Acknowledge (Unicast: "It's yours!") -------- |
+    |                                                      |
+```
+
+-----
+
+### Multicast & Broadcast
+
+While most network traffic is **unicast** (one-to-one), broadcast and multicast are essential for one-to-many communication.
+
+  * **Broadcast**: One-to-everyone. A broadcast packet is sent to a special address that every single device on the local network segment must process. It's like a public announcement in a large room—everyone has to stop and listen.
+
+      * **Real-World Analogy**: A fire alarm in a building. It's non-selective and forces everyone to pay attention.
+      * **Examples**: **ARP Requests** and **DHCP Discover** messages use broadcasts to find a specific device or service without knowing its address beforehand.
+
+  * **Multicast**: One-to-many (but only to those who are interested). Devices can choose to "join" a multicast group. A single multicast packet is sent from a source and is only delivered by the network switches and routers to the members of that group.
+
+      * **Real-World Analogy**: Streaming a live cricket match. The broadcaster sends out a single stream, and only the people who have tuned their devices to that specific stream (joined the multicast group) will receive it. This is far more efficient than sending a separate, identical stream to every single viewer (which would be multiple unicasts).
+      * **Examples**: IPTV, online gaming, and stock market data feeds.
+
+| Communication Type | Target | Analogy | Network Impact |
+| :--- | :--- | :--- | :--- |
+| **Unicast** | One specific device | A private phone call | Low |
+| **Broadcast** | All devices on a LAN | A fire alarm | High (disrupts every device) |
+| **Multicast** | A specific group of devices | A radio station broadcast | Medium (only affects subscribers) |
+
+-----
+
+### Neighbor Discovery Protocols
+
+Neighbor Discovery protocols are used for **zero-configuration networking**. They allow devices like printers, smart TVs, and IoT gadgets to automatically announce their presence and services on a local network, making them easy to find and use.
+
+#### How It Works
+
+Instead of relying on a central server, devices use **multicast** messages to advertise themselves.
+
+1.  **Announcement**: When a new network printer comes online, it sends a multicast message to a standardized address, saying, "Hi, I'm a printer at IP address `X`, and I support these printing services."
+2.  **Listening**: Your computer or smartphone is constantly listening for these multicast announcements.
+3.  **Discovery**: When you click "Add Printer," your computer already has a list of available printers it discovered through these announcements, with no manual IP configuration needed.
+
+This is the magic behind features like Apple's AirPrint, Google's Chromecast discovery, and seeing shared media servers in your file explorer. Protocols like **mDNS** (multicast DNS) and **SSDP** (Simple Service Discovery Protocol) are the engines driving this process.
+
+-----
+
+### Common Ports & Services
+
+Ports are used at the Transport Layer to identify specific applications or services running on a device. When data arrives at a device with an IP address, the port number tells the operating system which program should receive it (e.g., port 443 for the web browser, port 25 for the email client).
+
+Here is a table of some of the most common ports and their associated services.
+
+| Port | Protocol | Service | Description |
+| :--- | :--- | :--- | :--- |
+| **20/21** | TCP | **FTP** | File Transfer Protocol (for transferring files) |
+| **22** | TCP | **SSH** | Secure Shell (for secure remote command-line access) |
+| **25** | TCP | **SMTP** | Simple Mail Transfer Protocol (for sending email) |
+| **53** | TCP/UDP | **DNS** | Domain Name System (for name resolution) |
+| **67/68** | UDP | **DHCP** | Dynamic Host Configuration Protocol |
+| **80** | TCP | **HTTP** | Hypertext Transfer Protocol (for unencrypted web traffic) |
+| **123** | UDP | **NTP** | Network Time Protocol (for synchronizing clocks) |
+| **443** | TCP | **HTTPS** | HTTP Secure (for encrypted, secure web traffic) |
+
+-----
 
 ## Security & Design Considerations
 
