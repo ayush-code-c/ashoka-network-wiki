@@ -179,6 +179,111 @@ Attacker intercepts/forwards packets (Man-in-the-Middle).
 
 ## Network & Transport Layers
 
+In the OSI model and its practical counterpart, the TCP/IP model, the Transport Layer and the Network Layer sit one above the other and form the core of end-to-end communication.
+
+### Transport Layer 
+
+The Transport Layer is the fourth layer in the OSI model, and it maps directly to the Transport Layer in the TCP/IP model. Its main responsibility is end-to-end communication between applications running on different hosts. While lower layers focus on getting data across links and networks, the transport layer ensures that this data exchange is properly managed between the actual processes that need to communicate.
+
+```plaintext
++-------------------------+
+| Application Layer       |   (processes)
++-------------------------+
+| Transport Layer         |   (end-to-end delivery)
++-------------------------+
+| Network Layer           |   (host-to-host delivery)
++-------------------------+
+```
+
+-----
+
+
+
+#### Core Responsibilities
+
+ * **Segmentation and Reassembly:**
+Divides application data into smaller segments for transmission and reassembles them at the destination.
+
+ * **Process-to-Process Communication (Multiplexing/Demultiplexing):**
+Uses port numbers to deliver data to the correct application on a device. Multiple processes can share the same network connection without interfering.
+
+ * **Error Detection and Recovery:**
+Ensures that corrupted or missing data segments are detected and retransmitted if necessary.
+
+ * **Flow Control:**
+Balances the rate of data transmission between sender and receiver so that a fast sender does not overwhelm a slower receiver.
+
+ * **Connection Management (where applicable):**
+Establishes, maintains, and terminates logical connections between applications. Some transport services are connection-oriented (guaranteeing reliable transfer), while others are connectionless (prioritizing speed).
+
+#### Conceptual View
+
+```plaintext
++----------------+          +----------------+
+| Process A      |          | Process B      |
+| (Application)  |          | (Application)  |
++----------------+          +----------------+
+        |                           |
+   +----v----+                 +----v----+
+   | Transport|                 | Transport|
+   |  Layer   | <-------------->|  Layer   |
+   +----------+                 +----------+
+        |                           |
+   +----v----+                 +----v----+
+   | Network |                 | Network |
+   |  Layer  |                 |  Layer  |
+   +---------+                 +---------+
+
+```
+
+-----
+
+
+
+Here, the transport layer provides a logical communication channel between processes on two different hosts, while the underlying network layer handles actual packet movement.
+
+
+### Network Layer 
+
+The Network Layer is the third layer of the OSI model and corresponds to the Internet Layer in the TCP/IP model. Its main responsibility is host-to-host delivery across multiple interconnected networks. While the transport layer focuses on communication between processes, the network layer ensures that packets travel across potentially complex networks from source device to destination device.
+
+#### Core Responsibilities
+
+ * **Logical Addressing (IP Addressing):**
+Assigns unique logical addresses (IP addresses) to devices. Unlike MAC addresses, which are tied to hardware, logical addresses allow devices to be identified across different networks.
+
+ * **Routing:**
+Determines the best path for a packet to travel through intermediate nodes (routers) to reach its destination. Routing decisions may consider cost, distance, bandwidth, or congestion.
+
+ * **Packet Forwarding:**
+Moves packets from the input interface of a router to the correct output interface based on the routing table.
+
+ * **Fragmentation and Reassembly:**
+Breaks down large packets into smaller fragments when the underlying network cannot handle them, then reassembles them at the destination.
+
+ * **Error Handling and Diagnostics:**
+Provides mechanisms (e.g., ICMP in practice) for error reporting and diagnostics, such as unreachable hosts or time-to-live (TTL) expiration.
+
+Conceptual View
+
+```plaintext
+ Source Host                 Routers                Destination Host
++-------------+        +-------------+        +-------------+
+| Transport   |        |             |        | Transport   |
+| Layer       |        |  Routing    |        | Layer       |
++-------------+        |   +-------->|        +-------------+
+| Network     |------->|---+ Packet  |------->| Network     |
+| Layer       |        |   | Forward |        | Layer       |
++-------------+        +-------------+        +-------------+
+
+```
+
+-----
+
+
+
+Here, the network layer ensures that packets move from the source host to the destination host, crossing routers and networks along the way. The transport layer sits above this, handling the process-to-process delivery once the packet reaches its destination host.
+
 
 ## Core Protocols
 
