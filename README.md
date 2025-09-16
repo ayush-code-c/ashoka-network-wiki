@@ -179,7 +179,6 @@ Attacker intercepts/forwards packets (Man-in-the-Middle).
 
 ## Network & Transport Layers
 
-xyz
 
 ## Core Protocols
 
@@ -313,4 +312,126 @@ Here is a table of some of the most common ports and their associated services.
 
 ## Security & Design Considerations
 
-xyz
+This section ties together the **technical depth** of the OSI layers with **real-world security practices** and **design principles**. A good crash course should not only explain how protocols work, but also **how they can fail** and **how to protect them**.
+
+---
+
+### Why Naming Conventions Matter
+- Networks may start small, but scale quickly to **hundreds or thousands of devices**. Without proper naming, managing them becomes chaotic.
+- **Benefits:**
+  - **Unique Identification:** No two devices should have the same hostname.
+  - **Contextual Clarity:** Names should encode location, role, and sometimes function.
+  - **Consistency Across Teams:** Network admins, security analysts, and helpdesk all benefit from predictable patterns.
+  - **Troubleshooting Made Faster:** When logs show “ENG-SRV-DB01 down,” admins know exactly where to look.
+- **Example Naming Schemes:**
+  - `HR-LAP-003` → HR department laptop #3.
+  - `DC1-SRV-WEB01` → Data Center 1, Server, Web, Instance 01.
+  - `LAB-PRN-CLR02` → Lab Printer, Color, Unit #2.
+- **Bad Example:** `Server123` or `NewPrinter` — vague, meaningless in large environments.
+
+---
+
+### Attack Surfaces in Protocols
+Every network protocol assumes **some degree of trust**, which attackers exploit. Understanding these weaknesses is crucial.
+
+#### Common Attacks
+- **TCP SYN Flooding:**
+  - Exploits the **3-way handshake**.
+  - Attacker sends thousands of SYN requests but never replies with ACK.
+  - Victim server holds half-open connections, exhausting resources.
+- **DNS Spoofing / Cache Poisoning:**
+  - Injects fake DNS responses so that `google.com` → attacker’s IP.
+  - Victims unknowingly connect to malicious servers.
+- **ARP Spoofing:**
+  - Attacker sends fake ARP replies (“I am the gateway”).
+  - Redirects traffic → attacker for sniffing or tampering (MITM).
+- **DHCP Starvation:**
+  - Attacker requests all available IP addresses from DHCP server.
+  - Legit users cannot obtain an IP.
+- **ICMP Misuse (Ping of Death, Smurf Attack):**
+  - Floods victim with malformed or amplified ICMP packets.
+- **Real-World Consequence:**  
+  In 2016, the **Mirai botnet** exploited IoT devices with weak security → launched massive DDoS against DNS providers, disrupting internet access globally.
+
+---
+
+### Importance of Segmentation
+Segmentation reduces risk by **dividing the network into logical zones**.
+
+#### Why Segment?
+- Limits the spread of malware/worms.
+- Prevents IoT or guest devices from accessing sensitive data.
+- Simplifies applying firewall rules.
+
+#### Types of Segmentation
+- **VLANs (Virtual LANs):**  
+  Group devices logically, even across switches. Example: all finance PCs in VLAN 20.
+- **Subnets:**  
+  Divide IP space into smaller blocks. Example: `192.168.1.0/24` for printers, `192.168.2.0/24` for servers.
+- **Physical Segmentation:**  
+  Separate switches/routers for critical devices.
+- **Microsegmentation (Advanced):**  
+  Restrict communication even within the same VLAN (e.g., east-west traffic control inside data centers).
+
+#### Example
+- **Without Segmentation:**  
+  Compromised IoT camera → scans and infects HR payroll server.  
+- **With Segmentation:**  
+  Camera isolated in IoT VLAN with no route to HR VLAN → attack contained.
+
+---
+
+### Best Practices for Stable Design
+
+A secure and reliable network is not an accident — it’s **designed upfront**.
+
+#### Security Measures
+- **Firewalls:**  
+  - Edge firewalls (internet-facing).  
+  - Internal firewalls (between VLANs).  
+  - Example: Allow `443` (HTTPS) to web servers but block `23` (Telnet).
+- **Intrusion Detection/Prevention (IDS/IPS):**  
+  Alerts or blocks suspicious patterns.
+- **Zero Trust:**  
+  Don’t automatically trust internal traffic. Authenticate everything.
+
+#### Monitoring & Logging
+- **Syslog Servers**: Centralize logs from routers, switches, servers.
+- **SNMP / NetFlow**: Monitor bandwidth, detect anomalies.
+- **SIEM Systems**: Correlate events, detect breaches early.
+- Example: Sudden spike in DNS requests may indicate malware beaconing.
+
+#### Redundancy & High Availability
+- **Dual routers/firewalls** with failover.
+- **Load balancers** for servers.
+- **Multiple ISPs** for critical organizations.
+- Example: A bank’s website cannot go down due to a single router failure.
+
+#### Documentation & Governance
+- Maintain **network diagrams** (physical + logical).
+- Keep **configs versioned** (e.g., in Git).
+- Track **IP allocations** (IPAM tools).
+- Enforce **change management** (who changed what, when).
+
+#### Principle of Least Privilege
+- Users/devices get only **minimum required access**.
+- Example: Printer should not reach database servers.
+
+---
+
+### Crash Course Wrap-Up – How Layers Work Together
+
+Think of the OSI/TCP-IP stack as **a layered defense and delivery model**:
+
+#### Example Walkthrough: A User Accessing a Website
+1. **Application Layer:** Browser sends HTTP request.
+2. **Transport Layer:** TCP ensures reliable delivery (or UDP if it’s streaming).
+3. **Network Layer:** IP determines where to send (using DNS to resolve).
+4. **Data Link Layer:** Ethernet frame ensures local delivery to gateway.
+5. **Physical Layer:** Bits travel via copper, fiber, or wireless.
+
+#### Key Insight:
+- **Weakest link principle**: If *any* layer is insecure (e.g., weak ARP, open ports, no firewall), the entire communication is at risk.
+
+#### Visual Stack (with Protocols)
+
